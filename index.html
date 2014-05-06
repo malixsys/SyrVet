@@ -1,4 +1,3 @@
-
 <html ng-app="syrVetApp">
 <head>
   <meta charset="utf-8">
@@ -12,62 +11,132 @@
   <style>
     .map {
       border: 1px solid white;
-      position:absolute;
-      width:100%;
-      bottom:0;
+      position: absolute;
+      width: 100%;
+      bottom: 0;
       top: 0;
     }
   </style>
 </head>
 <body ng-controller="MainCtrl">
-<div class="map"></div>
+<div class="map" ng-model="dealers"></div>
 <script>
   angular.module('syrVetApp', ['ionic'])
+      .factory('Drive', ['$http', '$location', function($http, $location) {
+        var supplier = $location.search().s || 'Thymox';
+        console.log(supplier);
+        return {
+          load: function() {
+            return $http.jsonp('https://spreadsheets.google.com/feeds/cells/1YvKLwJDLXlbSBcg6CPLQWhFDrcTJckAS3YYuLSeA11g/0/public/basic?alt=json-in-script&callback=JSON_CALLBACK')
+                .then(function(response) {
+                  var cells = response && response.data && response.data.feed && response.data.feed.entry;
+                  cells = cells.reduce(function(m, c) {
+                    var key = c.title.$t;
+                    var RC = /([A-Za-z]+)(\d+)/gi.exec(key);
+                    RC.shift();
+                    var row = parseInt(RC[1], 10);
+                    var col = RC[0].split('').reduce(function(m, l) {
+                      var letter = l.charCodeAt(0) - 64;
+                      return (m * 26) + letter;
+                    }, 0);
+                    var text = c.content.$t;
 
-      .controller('MainCtrl', function($scope) {
-      })
-      .directive('map', function() {
+                    if (!m[row - 1]) {
+                      m[row - 1] = [];
+                    }
+                    m[row - 1][col - 1] = text;
+                    return m;
+                  }, []);
+                  cells = cells.filter(function(c) {
+                    return c.shift() === supplier;
+                  })
+                  return cells;
+                });
+          }
+        }
+      }])
+      .controller('MainCtrl', ['$scope', function($scope) {
+      }])
+      .directive('map', ['Drive', function(Drive) {
         return {
           restrict: 'C',
           template: '<div>A</div>',
           replace: true,
+          require: '^ngModel',
           link: function(scope, ele, attrs) {
-            //
-            var latlng = new google.maps.LatLng(45.8, -73);
+
+            var markers = [];
+
+            var latlng = new google.maps.LatLng(45.8, -72);
             var myOptions = {
-              zoom: 9,
+              zoom: 6,
               center: latlng,
               mapTypeId: google.maps.MapTypeId.ROADMAP
             };
-            map = new google.maps.Map(ele[0],myOptions);
+            map = new google.maps.Map(ele[0], myOptions);
 
             geocoder = new google.maps.Geocoder();
 
-            geocoder.geocode( { 'address': ' 224, St-Jude Street North; Granby, Qc'}, function(results, status) {
-              if (status == google.maps.GeocoderStatus.OK) {
-                var marker = new google.maps.Marker({
-                  map: map,
-                  position: results[0].geometry.location,
-                  title: "Mondou in Granby"
-                });
-                var infowindow = new google.maps.InfoWindow({
-                  content: "<h3>Mondou</h3>Address:  224, St-Jude Street North; Granby, Qc"
-                });
-                google.maps.event.addListener(marker, 'click', function() {
-                  infowindow.open(map,marker);
-                });
-                marker.orderid = 1;
-                marker.infowindow = infowindow;
-                markers[markers.length] = marker;
+            var delay = 10;
+            var mapDealer = function(dealer, index) {
+              var found = !!(dealer, dealer[3] && dealer[3].length && dealer[4] && dealer[4].length && true);
+              if (found) {
+                delay += 10;
               } else {
-                //alert("Geocode was not successful for the following reason: " + status);
+                delay += 750;
               }
-            });
+              setTimeout(function() {
+                if (found) {
+                  var marker = new google.maps.Marker({
+                    map: map,
+                    position: new google.maps.LatLng(parseFloat(dealer[3]), parseFloat(dealer[4])),
+                    title: dealer[0]
+                  });
+                  var infowindow = new google.maps.InfoWindow({
+                    content: "<h3>" + dealer[0] + "</h3>Address:  " + dealer[1] + "<br/>" +
+                        "Téléphone:  " + dealer[2]
+                  });
+                  google.maps.event.addListener(marker, 'click', function() {
+                    infowindow.open(map, marker);
+                  });
+                  marker.orderid = index + 1;
+                  marker.infowindow = infowindow;
+                  markers[markers.length] = marker;
 
-            //
+                } else {
+                  geocoder.geocode({ 'address': dealer[1]}, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                      dealer[3] = results[0].geometry.location;
+                      console.log(dealer[3].lat(), ',', dealer[3].lng(), ',', dealer[0]);
+                      var marker = new google.maps.Marker({
+                        map: map,
+                        position: results[0].geometry.location,
+                        title: dealer[0]
+                      });
+                      var infowindow = new google.maps.InfoWindow({
+                        content: "<h3>" + dealer[0] + "</h3>Address:  " + dealer[1] + "<br/>" +
+                            "Téléphone:  " + dealer[2]
+                      });
+                      google.maps.event.addListener(marker, 'click', function() {
+                        infowindow.open(map, marker);
+                      });
+                      marker.orderid = index + 1;
+                      marker.infowindow = infowindow;
+                      markers[markers.length] = marker;
+                    } else {
+                      console.log(arguments);
+                    }
+                  });
+                }
+              }, delay);
+            };
+
+            Drive.load().then(function(list) {
+              list.forEach(mapDealer);
+            });
           }
         };
-      })
+      }])
   ;
 </script>
 </body>
