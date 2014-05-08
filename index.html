@@ -5,7 +5,7 @@
 
   <title>Dealer Locator</title>
 
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon"/>
 
   <link href="http://code.ionicframework.com/1.0.0-beta.3/css/ionic.css" rel="stylesheet">
   <script src="http://code.ionicframework.com/1.0.0-beta.3/js/ionic.bundle.js"></script>
@@ -54,14 +54,18 @@
 <script type="text/ng-template" id="infoWindowTemplate">
   <div class="google-map">
     <h3>{{windowInfo.title}}</h3>
-    <ul>
-      <li><h4>{{windowInfo.address}}</h4></li>
-      <li><b>Dist.: </b> {{windowInfo.distance}} km<br/>
-        <b>Tel.: </b>{{windowInfo.telephone}}
-      </li>
-      <li style="float:right;"><button ng-click="OK()">OK</button>
-      </li>
-    </ul>
+
+    <div class="row"><h4>{{windowInfo.address}}</h4></div>
+    <div class="row">
+      <b class="col col-25">Dist.: </b>
+      <div class="col col-75">{{windowInfo.distance}} km</div>
+    </div>
+    <div class="row">
+      <b class="col col-25">Tel.: </b><input type="tel" readonly style="cursor: text;" class="col col-75" ng-value="windowInfo.telephone"/>
+    </div>
+    <div class="row">
+      <button class="col col-25 col-offset-75" ng-click="OK()">OK</button>
+    </div>
     <div style="clear: both;"></div>
   </div>
 </script>
@@ -197,7 +201,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         loaded: false,
         searching: false
       };
-      Drive.load().then(function(dealers){
+      Drive.load().then(function(dealers) {
         $scope.info.dealers = dealers;
         $scope.info.label = 'Postal Code:';
         $scope.info.loaded = true;
@@ -262,7 +266,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
                   icon: 'http://maps.google.com/mapfiles/kml/shapes/arrow.png'
                 });
                 markers[markers.length] = marker;
-                scope.OK = function () {
+                scope.OK = function() {
                   map.setCenter(marker.getPosition());
                   map.setZoom(8);
                   window.infowindow.close();
@@ -290,7 +294,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
                   map.setCenter(marker.getPosition());
                   map.setZoom(11);
                   scope.windowInfo.title = dealer[0];
-                  scope.windowInfo.address = dealer[1].replace(', Canada','');
+                  scope.windowInfo.address = dealer[1].replace(', Canada', '');
                   scope.windowInfo.telephone = dealer[2];
                   scope.windowInfo.distance = dist.toFixed(0)
                   scope.$apply();
@@ -301,7 +305,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
             markers[markers.length] = marker;
             marker.orderid = markers.length;
           }
-          
+
           function mapDealer(dealer, index) {
             var found = !!(dealer, dealer[3] && dealer[3].length && dealer[4] && dealer[4].length && true);
             if (found) {
