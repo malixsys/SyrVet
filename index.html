@@ -14,6 +14,16 @@
           src="http://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,places&sensor=false">
   </script>
   <style>
+    body.wait, body.wait *{
+      cursor: wait !important;
+    }
+
+    div.google-map {
+      -webkit-user-select: initial;
+      -moz-user-select:    initial;
+      -ms-user-select:     initial;
+      user-select:         initial;
+    }
     .map {
       border: 1px solid white;
       position: absolute;
@@ -53,15 +63,13 @@
 <ui-view/>
 <script type="text/ng-template" id="infoWindowTemplate">
   <div class="google-map">
-    <h3>{{windowInfo.title}}</h3>
-
+    <div class="row">
+      <h3 class="col col-90">{{windowInfo.title}}</h3>
+      <small class="col col-10">{{windowInfo.distance}} km</small>
+    </div>
     <div class="row"><h4>{{windowInfo.address}}</h4></div>
     <div class="row">
-      <b class="col col-25">Dist.: </b>
-      <div class="col col-75">{{windowInfo.distance}} km</div>
-    </div>
-    <div class="row">
-      <b class="col col-25">Tel.: </b><input type="tel" readonly style="cursor: text;" class="col col-75" ng-value="windowInfo.telephone"/>
+      <b class="col col-25">Telephone:</b><span class="col col-50">{{windowInfo.telephone}}</span><a href="tel:{{windowInfo.telephone}}" class="col col-25">Call</a>
     </div>
     <div class="row">
       <button class="col col-25 col-offset-75" ng-click="OK()">OK</button>
@@ -81,7 +89,8 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
             .state("home", {
               url: '/',
               template: '<div class="map" searching="info.searching" dealers="info.dealers" search="info.search">Loading...</div><label class="search">' +
-                  '<span ng-bind="info.label">Loading...</span><input ng-if="info.loaded" ng-disabled="info.searching" maxlength="3" type="text" ng-model="info.search" /> </label>',
+                  '<span ng-bind="info.label">Loading...</span>' +
+                  '<input autofocus="true" placeholder="___" ng-if="info.loaded" ng-disabled="info.searching" maxlength="3" type="text" ng-model="info.search" /> </label>',
               controller: 'MainCtrl'
             })
 
@@ -207,7 +216,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         $scope.info.loaded = true;
       })
     }])
-    .directive('map', ['$compile', '$templateCache', 'Geo', 'Drive', function($compile, $templateCache, Geo, Drive) {
+    .directive('map', ['$compile', '$templateCache', '$timeout', 'Geo', 'Drive', function($compile, $templateCache, $timeout, Geo, Drive) {
       return {
         restrict: 'C',
         template: '<div>A</div>',
@@ -218,6 +227,10 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           searching: '='
         },
         link: function(scope, ele, attrs) {
+
+          var body = angular.element(document.querySelector('body'));
+
+          console.log(body);
 
           var markers = [];
 
@@ -245,7 +258,8 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           var infoWindowTemplate = $templateCache.get('infoWindowTemplate').trim();
           var infoWindowElem = $compile(infoWindowTemplate)(scope);
           window.infowindow = new google.maps.InfoWindow({
-            content: infoWindowElem[0]
+            content: infoWindowElem[0],
+            disableAutoPan: true
           });
 
           var center = [-94.2861328, 56.2571657];
@@ -291,14 +305,17 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
             });
             google.maps.event.addListener(
                 marker, 'mousedown', function() {
+                  body.addClass('wait');
+                  $timeout(function(){
                   map.setCenter(marker.getPosition());
                   map.setZoom(11);
                   scope.windowInfo.title = dealer[0];
                   scope.windowInfo.address = dealer[1].replace(', Canada', '');
                   scope.windowInfo.telephone = dealer[2];
                   scope.windowInfo.distance = dist.toFixed(0)
-                  scope.$apply();
                   window.infowindow.open(marker.get('map'), marker);
+                  body.removeClass('wait');
+                  }, 100 );
                 });
 
             marker.infowindow = infowindow;
@@ -347,4 +364,3 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
 </script>
 </body>
 </html>
-
