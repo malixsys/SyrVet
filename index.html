@@ -14,16 +14,17 @@
           src="http://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,places&sensor=false">
   </script>
   <style>
-    body.wait, body.wait *{
+    body.wait, body.wait * {
       cursor: wait !important;
     }
 
     div.google-map {
       -webkit-user-select: initial;
-      -moz-user-select:    initial;
-      -ms-user-select:     initial;
-      user-select:         initial;
+      -moz-user-select: initial;
+      -ms-user-select: initial;
+      user-select: initial;
     }
+
     .map {
       border: 1px solid white;
       position: absolute;
@@ -57,22 +58,57 @@
       font-size: 22px;
       border: 1px solid grey;
     }
+
+    div.address {
+      font-size: 15px;
+    }
+
+    div.label {
+      font-weight: bold;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    div.telephone a {
+      text-decoration: none;
+    }
+
+    div.telephone a:hover, div.telephone a:active {
+      text-decoration: underline;
+      font-weight: bold;
+    }
+
+    div.telephone {
+      font-size: 14px;
+      margin-top: 8px;
+      margin-bottom: 16px;
+    }
+    div.title {
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    div.title small {
+      font-weight: normal;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
 <ui-view/>
 <script type="text/ng-template" id="infoWindowTemplate">
   <div class="google-map">
-    <div class="row">
-      <h3 class="col col-90">{{windowInfo.title}}</h3>
-      <small class="col col-10">{{windowInfo.distance}} km</small>
+    <div class="row title">
+      <div class="col col-80">{{windowInfo.title}}</div>
+      <small class="col col-20">{{windowInfo.distance}} km</small>
     </div>
-    <div class="row"><h4>{{windowInfo.address}}</h4></div>
+    <div class="row address">{{windowInfo.address}}</div>
     <div class="row">
-      <b class="col col-25">Telephone:</b><span class="col col-50">{{windowInfo.telephone}}</span><a href="tel:{{windowInfo.telephone}}" class="col col-25">Call</a>
+      <div class="col col-33 label">Telephone:</div>
+      <div class="col col-66 telephone">{{windowInfo.telephone}}&nbsp;&nbsp;&nbsp;<a href="tel:{{windowInfo.telephone}}">[ Call ]</a></div>
     </div>
     <div class="row">
-      <button class="col col-25 col-offset-75" ng-click="OK()">OK</button>
+      <button class="col col-33 col-offset-66" ng-click="OK()">OK</button>
     </div>
     <div style="clear: both;"></div>
   </div>
@@ -259,7 +295,8 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           var infoWindowElem = $compile(infoWindowTemplate)(scope);
           window.infowindow = new google.maps.InfoWindow({
             content: infoWindowElem[0],
-            disableAutoPan: true
+            disableAutoPan: true,
+            maxWidth: Math.min(480, window.innerWidth)
           });
 
           var center = [-94.2861328, 56.2571657];
@@ -306,16 +343,18 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
             google.maps.event.addListener(
                 marker, 'mousedown', function() {
                   body.addClass('wait');
-                  $timeout(function(){
-                  map.setCenter(marker.getPosition());
-                  map.setZoom(11);
-                  scope.windowInfo.title = dealer[0];
-                  scope.windowInfo.address = dealer[1].replace(', Canada', '');
-                  scope.windowInfo.telephone = dealer[2];
-                  scope.windowInfo.distance = dist.toFixed(0)
-                  window.infowindow.open(marker.get('map'), marker);
-                  body.removeClass('wait');
-                  }, 100 );
+                  window.infowindow.close();
+                  $timeout(function() {
+                    map.setCenter(marker.getPosition());
+                    map.setZoom(11);
+                    scope.windowInfo.title = dealer[0];
+                    scope.windowInfo.address = dealer[1].replace(', Canada', '');
+                    scope.windowInfo.telephone = dealer[2];
+                    scope.windowInfo.distance = dist.toFixed(0)
+                    window.infowindow.setOptions({maxWidth: Math.min(480, window.innerWidth)});
+                    window.infowindow.open(marker.get('map'), marker);
+                    body.removeClass('wait');
+                  }, 100);
                 });
 
             marker.infowindow = infowindow;
