@@ -147,7 +147,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
       var supplier = $location.search().s || 'Thymox';
       return {
         geocode: function(code) {
-          return $http.get('http://geogratis.gc.ca/services/geolocation/fr/locate?q=' + code)
+          return $http.get('http://geogratis.gc.ca/services/geolocation/en/locate?q=' + code)
               .then(function(response) {
                 if (response.status !== 200 || !response.data || !response.data.length) {
                   return false;
@@ -199,7 +199,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
       };
       Drive.load().then(function(dealers){
         $scope.info.dealers = dealers;
-        $scope.info.label = 'Code Postal:';
+        $scope.info.label = 'Postal Code:';
         $scope.info.loaded = true;
       })
     }])
