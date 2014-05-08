@@ -74,10 +74,8 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         $stateProvider
             .state("home", {
               url: '/',
-              resolve: {dealers: ['Drive', function(Drive) {
-                return Drive.load();
-              }]},
-              template: '<div class="map" dealers="info.dealers" search="info.search"></div><label class="search"><span>Code postal:</span><input maxlength="3" type="text" ng-model="info.search" /> </label>',
+              template: '<div class="map" searching="info.searching" dealers="info.dealers" search="info.search">Loading...</div><label class="search">' +
+                  '<span ng-bind="info.label">Loading...</span><input ng-if="info.loaded" ng-disabled="info.searching" maxlength="3" type="text" ng-model="info.search" /> </label>',
               controller: 'MainCtrl'
             })
 
@@ -191,9 +189,17 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         }
       }
     }])
-    .controller('MainCtrl', ['$scope', 'dealers', function($scope, dealers) {
-      $scope.info = {};
-      $scope.info.dealers = dealers;
+    .controller('MainCtrl', ['Drive', '$scope', function(Drive, $scope) {
+      $scope.info = {
+        label: 'Loading...',
+        loaded: false,
+        searching: false
+      };
+      Drive.load().then(function(dealers){
+        $scope.info.dealers = dealers;
+        $scope.info.label = 'Code Postal:';
+        $scope.info.loaded = true;
+      })
     }])
     .directive('map', ['$compile', '$templateCache', 'Geo', 'Drive', function($compile, $templateCache, Geo, Drive) {
       return {
@@ -202,7 +208,8 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         replace: true,
         scope: {
           dealers: '=',
-          search: '='
+          search: '=',
+          searching: '='
         },
         link: function(scope, ele, attrs) {
 
@@ -241,7 +248,9 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           scope.$watch('search', function(a) {
             clearOverlays();
             if (a && 3 === a.length) {
+              scope.searching = true;
               Drive.geocode(a).then(function(data) {
+                scope.searching = false;
                 if (!data) return;
                 center = data;
                 var marker = new google.maps.Marker({
