@@ -21,13 +21,13 @@
     }
 
     .search {
-      border: solid 1px black;
+      /*border: solid 1px black;*/
       position: fixed;
       bottom: 0px;
       left: 0px;
       width: 100%;
       height: 32px;
-      margin: 1px;
+      margin: 0;
       background-color: rgba(255, 255, 255, 0.75)
     }
 
@@ -43,6 +43,7 @@
       width: 100% margin : 0;
       margin-left: 130px;
       font-size: 22px;
+      border: 1px solid grey;
     }
   </style>
 </head>
@@ -52,9 +53,12 @@
   <div class="google-map">
     <h3>{{windowInfo.title}}</h3>
     <ul>
-      <li><b>Adresse: </b>{{windowInfo.address}}</li>
-      <li><b>Téléphone: </b>{{windowInfo.telephone}}</li>
-      <li style="float:right;"><button ng-click="OK()">OK</button></li>
+      <li><h4>{{windowInfo.address}}</h4></li>
+      <li><b>Dist.: </b> {{windowInfo.distance}} km<br/>
+        <b>Tel.: </b>{{windowInfo.telephone}}
+      </li>
+      <li style="float:right;"><button ng-click="OK()">OK</button>
+      </li>
     </ul>
     <div style="clear: both;"></div>
   </div>
@@ -73,7 +77,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
               resolve: {dealers: ['Drive', function(Drive) {
                 return Drive.load();
               }]},
-              template: '<div class="map" dealers="info.dealers" search="info.search"></div><label class="search"><span>Code postal:</span><input type="text" ng-model="info.search" /> </label>',
+              template: '<div class="map" dealers="info.dealers" search="info.search"></div><label class="search"><span>Code postal:</span><input maxlength="3" type="text" ng-model="info.search" /> </label>',
               controller: 'MainCtrl'
             })
 
@@ -264,7 +268,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           function addMarker(dealer, lat, lng) {
             var dist = Geo.distance(center, lat, lng);
             console.log(dist);
-            if (dist > 100) return;
+            if (dist > 201) return;
             var marker = new google.maps.Marker({
               map: map,
               position: new google.maps.LatLng(lat, lng),
@@ -275,8 +279,9 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
                   map.setCenter(marker.getPosition());
                   map.setZoom(11);
                   scope.windowInfo.title = dealer[0];
-                  scope.windowInfo.address = dealer[1];
+                  scope.windowInfo.address = dealer[1].replace(', Canada','');
                   scope.windowInfo.telephone = dealer[2];
+                  scope.windowInfo.distance = dist.toFixed(0)
                   scope.$apply();
                   window.infowindow.open(marker.get('map'), marker);
                 });
