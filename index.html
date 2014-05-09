@@ -18,6 +18,16 @@
       cursor: wait !important;
     }
 
+    .google-map {
+      width: 320px;
+    }
+
+    @media (min-width: 680px) {
+      .google-map {
+        width: 420px;
+      }
+    }
+
     div.google-map {
       -webkit-user-select: initial;
       -moz-user-select: initial;
@@ -38,11 +48,11 @@
       position: fixed;
       top: 0px;
       left: 80px;
-      width: 354px;
+      width: 288px;
       height: 32px;
       margin: 0;
-      background-color: rgba(255, 255, 255, 0.5);
-      padding-left:2px;
+      background-color: rgba(255, 255, 255, 0.75);
+      padding-left: 2px;
     }
 
     span {
@@ -54,8 +64,8 @@
       top: 1px;
       height: 30px;
       background-color: rgba(255, 255, 255, 0.75);
-      margin-left: 300px;
-      width:48px;
+      margin-left: 200px;
+      width: 84px;
       height: 30px;
       font-size: 22px;
       border: 1px solid grey;
@@ -85,11 +95,13 @@
       margin-top: 8px;
       margin-bottom: 16px;
     }
+
     div.title {
       font-size: 17px;
       font-weight: bold;
       margin-bottom: 16px;
     }
+
     div.title small {
       font-weight: normal;
       font-size: 13px;
@@ -116,6 +128,8 @@
   </div>
 </script>
 <script>
+var POSTAL_PLACEHOLDER = '______';
+
 angular.module('syrVetApp', ['ionic', 'ui.router'])
     .config(
     [          '$stateProvider', '$urlRouterProvider',
@@ -128,7 +142,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
               url: '/',
               template: '<div class="map" searching="info.searching" dealers="info.dealers" search="info.search">Loading...</div><label class="search">' +
                   '<span ng-bind="info.label">Loading...</span>' +
-                  '<input autofocus="true" placeholder="___" ng-if="info.loaded" ng-disabled="info.searching" maxlength="3" type="text" ng-model="info.search" /> </label>',
+                  '<input autofocus="true" placeholder="' + POSTAL_PLACEHOLDER + '" ng-if="info.loaded" ng-disabled="info.searching" maxlength="' + POSTAL_PLACEHOLDER.length + '" type="text" ng-model="info.search" /> </label>',
               controller: 'MainCtrl'
             })
 
@@ -198,6 +212,17 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
       var supplier = $location.search().s || 'Thymox';
       return {
         geocode: function(code) {
+          return $http.get('https://maps.googleapis.com/maps/api/geocode/json?sensor=false&components=postal_code:' + code)
+              .then(function(response) {
+                if (response.status !== 200 || !response.data || !response.data.results || !response.data.results.length) {
+                  return false;
+                }
+                var loc = response.data.results[0].geometry.location;
+                return [loc.lng, loc.lat, response.data.results[0].geometry.bounds];
+              });
+
+        },
+        geogratis: function(code) {
           return $http.get('http://geogratis.gc.ca/services/geolocation/en/locate?q=' + code)
               .then(function(response) {
                 if (response.status !== 200 || !response.data || !response.data.length) {
@@ -250,7 +275,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
       };
       Drive.load().then(function(dealers) {
         $scope.info.dealers = dealers;
-        $scope.info.label = 'First 3 letters of postal code:';
+        $scope.info.label = 'Enter postal code:';
         $scope.info.loaded = true;
       })
     }])
@@ -271,6 +296,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           console.log(body);
 
           var markers = [];
+          var center = [-94.2861328, 56.2571657];
 
           function clearOverlays() {
             for (var i = 0; i < markers.length; i++) {
@@ -301,22 +327,43 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
             maxWidth: Math.min(480, window.innerWidth)
           });
 
-          var center = [-94.2861328, 56.2571657];
-
-
+          function makeBounds(data) {
+            console.log(data);
+            return new google.maps.LatLngBounds(
+                new google.maps.LatLng(data.southwest.lat,data.southwest.lng),
+                new google.maps.LatLng(data.northeast.lat,data.northeast.lng))
+          }
           scope.$watch('search', function(a) {
             clearOverlays();
-            if (a && 3 === a.length) {
+            var code = ('' + a).replace(/ /g, '').toUpperCase();
+            if (a && code !== a) {
+              scope.search = code;
+            }
+            if (a && (a.length === 3 || a.length === 6)) {
               scope.searching = true;
               Drive.geocode(a).then(function(data) {
                 scope.searching = false;
-                if (!data) return;
+                if (!data) {
+                  scope.search = '';
+                  return;
+                }
                 center = data;
+                var postal_rectangle = new google.maps.Rectangle({
+                  strokeColor: '#FF0000',
+                  strokeOpacity: 0.5,
+                  strokeWeight: 1,
+                  fillColor: '#FF0000',
+                  fillOpacity: 0.1,
+                  map: map,
+                  bounds: makeBounds(data[2])});
+
+                markers[markers.length] = postal_rectangle;
+
                 var marker = new google.maps.Marker({
                   map: map,
                   position: new google.maps.LatLng(data[1], data[0]),
                   title: a.toUpperCase(),
-                  icon: 'http://maps.google.com/mapfiles/kml/shapes/arrow.png'
+                  icon: 'http://labs.google.com/ridefinder/images/mm_20_black.png'//http://labs.google.com/ridefinder/images/mm_20_red.png'//'home.png'//'http://maps.google.com/mapfiles/kml/shapes/arrow.png'
                 });
                 markers[markers.length] = marker;
                 scope.OK = function() {
@@ -341,6 +388,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
               map: map,
               position: new google.maps.LatLng(lat, lng),
               title: dealer[0]
+              //icon:'http://labs.google.com/ridefinder/images/mm_20_red.png'
             });
             google.maps.event.addListener(
                 marker, 'mousedown', function() {
@@ -350,7 +398,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
                     map.setCenter(marker.getPosition());
                     map.setZoom(11);
                     scope.windowInfo.title = dealer[0];
-                    scope.windowInfo.address = dealer[1].replace(', Canada', '');
+                    scope.windowInfo.address = dealer[1].replace('', '');
                     scope.windowInfo.telephone = dealer[2];
                     scope.windowInfo.distance = dist.toFixed(0)
                     window.infowindow.setOptions({maxWidth: Math.min(480, window.innerWidth)});
@@ -372,26 +420,29 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
               delay += 750;
             }
             setTimeout(function() {
-              if (found && index !== 1) {
+              if (found) {
                 addMarker(dealer, parseFloat(dealer[3]), parseFloat(dealer[4]));
               } else {
                 var parts = dealer[1].split(/(?:,\s?)/gi);
                 var options = {
-                  'address': parts[0],
-                  componentRestrictions: { administrativeArea: parts[2], postalCode: parts[1]}
+                  'address': parts[0]
                 };
-                if (parts[4] === 'Canada') {
-                  options.componentRestrictions.country = 'CA';
+                var code = /([A-Z][0-9][A-Z] [0-9][A-Z][0-9])/gi.exec(dealer[1])[0];
+                if (code) {
+                  options.componentRestrictions = { postalCode: code,
+                    country: 'CA'};
                 }
                 geocoder.geocode(options, function(results, status) {
                   if (status == google.maps.GeocoderStatus.OK) {
                     dealer[3] = results[0].geometry.location.lat();
                     dealer[4] = results[0].geometry.location.lng();
 
+                    console.log(dealer);
+
                     addMarker(dealer, parseFloat(dealer[3]), parseFloat(dealer[4]));
 
                   } else {
-                    console.log(arguments);
+                    console.log(options, arguments);
                   }
                 });
               }
@@ -405,3 +456,4 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
 </script>
 </body>
 </html>
+
