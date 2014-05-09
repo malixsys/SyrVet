@@ -36,12 +36,13 @@
     .search {
       /*border: solid 1px black;*/
       position: fixed;
-      bottom: 0px;
-      left: 0px;
-      width: 100%;
+      top: 0px;
+      left: 80px;
+      width: 354px;
       height: 32px;
       margin: 0;
-      background-color: rgba(255, 255, 255, 0.75)
+      background-color: rgba(255, 255, 255, 0.5);
+      padding-left:2px;
     }
 
     span {
@@ -50,11 +51,12 @@
 
     .search input {
       position: fixed;
-      bottom: 1px;
+      top: 1px;
       height: 30px;
-      background: transparent;
-      width: 100% margin : 0;
-      margin-left: 130px;
+      background-color: rgba(255, 255, 255, 0.75);
+      margin-left: 300px;
+      width:48px;
+      height: 30px;
       font-size: 22px;
       border: 1px solid grey;
     }
@@ -248,7 +250,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
       };
       Drive.load().then(function(dealers) {
         $scope.info.dealers = dealers;
-        $scope.info.label = 'Postal Code:';
+        $scope.info.label = 'First 3 letters of postal code:';
         $scope.info.loaded = true;
       })
     }])
