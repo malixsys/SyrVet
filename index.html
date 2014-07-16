@@ -18,8 +18,8 @@
       cursor: wait !important;
     }
 
-    .google-map {
-      width: 320px;
+    .google-map {thym
+    width: 320px;
     }
 
     @media (min-width: 680px) {
@@ -129,6 +129,12 @@
 </script>
 <script>
 var POSTAL_PLACEHOLDER = '______';
+if(!window || !window.console) {
+  window.console = {};
+  'log,dir,error,trace,warn'.split(',').forEach(function(key){
+    window.console[key] = function(){};
+  });
+}
 
 angular.module('syrVetApp', ['ionic', 'ui.router'])
     .config(
@@ -210,6 +216,7 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
     }])
     .factory('Drive', ['$http', '$location', function($http, $location) {
       var supplier = $location.search().s || 'Thymox';
+      console.log('Supplier:' + supplier);
       return {
         geocode: function(code) {
           return $http.get('https://maps.googleapis.com/maps/api/geocode/json?sensor=false&components=postal_code:' + code)
@@ -240,9 +247,9 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
         },
         load: function() {
           return $http.jsonp(
-            //'https://spreadsheets.google.com/feeds/cells/1YvKLwJDLXlbSBcg6CPLQWhFDrcTJckAS3YYuLSeA11g/0/public/basic?alt=json-in-script&callback=JSON_CALLBACK'
-            'https://spreadsheets.google.com/feeds/cells/1YvKLwJDLXlbSBcg6CPLQWhFDrcTJckAS3YYuLSeA11g/od6/public/basic?alt=json-in-script&callback=JSON_CALLBACK'
-            )
+              //'https://spreadsheets.google.com/feeds/cells/1YvKLwJDLXlbSBcg6CPLQWhFDrcTJckAS3YYuLSeA11g/0/public/basic?alt=json-in-script&callback=JSON_CALLBACK'
+              'https://spreadsheets.google.com/feeds/cells/1YvKLwJDLXlbSBcg6CPLQWhFDrcTJckAS3YYuLSeA11g/od6/public/basic?alt=json-in-script&callback=JSON_CALLBACK'
+          )
               .then(function(response) {
                 var cells = response && response.data && response.data.feed && response.data.feed.entry;
                 cells = cells.reduce(function(m, c) {
