@@ -338,7 +338,6 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
           });
 
           function makeBounds(data) {
-            console.log(data);
             return new google.maps.LatLngBounds(
                 new google.maps.LatLng(data.southwest.lat,data.southwest.lng),
                 new google.maps.LatLng(data.northeast.lat,data.northeast.lng))
@@ -392,7 +391,6 @@ angular.module('syrVetApp', ['ionic', 'ui.router'])
 
           function addMarker(dealer, lat, lng) {
             var dist = Geo.distance(center, lat, lng);
-            console.log(dist);
             if (dist > 201) return;
             var marker = new google.maps.Marker({
               map: map,
